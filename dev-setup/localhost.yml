@@ -1,0 +1,33 @@
+---
+# Pre-requirements for mac workstations
+# ===============================
+#
+# - login to AppStore and download XCode 
+#
+#  Manual steps REQUIRED TO RUN ANSBILE
+#   - install xcode CLI tools 
+#   $ xcode-select --install 
+#   # Install Brew : 
+#   $ /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+#   # then install ansible
+#   $ brew install ansible
+#
+#
+# To run this playbook
+# ====================
+# for CLI please use :
+# ansible-playbook localhost.yml
+
+- name: "Run the playbook tasks on the localhost"
+  hosts: 127.0.0.1
+  connection: local
+  become: no
+  vars:
+     # !!! UNCOMMENT THIS LINE!!!  change username@email.com with your Github email account
+     #developer_github_email: "username@email.com"
+  tasks:
+     - import_tasks: tasklist/build-env.yml
+     # ADD Custom tasks per developer or use another person preferences if you like them.
+     - import_tasks: dev-mac/diogo.yml 
+     - name:
+       shell: say beep!

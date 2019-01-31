@@ -1,0 +1,124 @@
+--
+- name: "Checking if XCode is installed (Failing fast if not the case)"
+  shell: xcode-select -p
+
+- name: "Accept Xcode license"
+  command: "/Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -license accept"
+  become: yes
+  become_method: sudo
+
+- name: "Set proper XCode instance"
+  command: "/usr/bin/xcode-select -switch /Applications/Xcode.app"
+  become: yes
+
+- name: "Allow local sudo without password"
+  copy:
+    content: "{{ ansible_ssh_user }} ALL=(ALL) NOPASSWD: ALL"
+    dest: "/private/etc/sudoers.d/{{ ansible_ssh_user }}"
+  become: yes
+
+- name: "Prepare ssh environemnt"
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0700
+  with_items:
+    - $HOME/.ssh
+
+- name: "Stat local bash_profile"
+  stat: path=$HOME/.bash_profile
+  register: profile
+
+- name: "Stat local bin"
+  stat: path=$HOME/bin
+  register: bin
+
+- name: "Create local bin"
+  file:
+    path: $HOME/bin
+    state: directory
+    mode: 0755
+  when: not bin.stat.exists
+
+- name: "Create bash profile if it doesn't exitst"
+  file: path=$HOME/.bash_profile 
+        state={{ "file" if profile.stat.exists else "touch"}}
+
+- name: "Setup bash profile"
+  blockinfile:
+    marker: "# {mark} add bin to bash profile"
+    path: $HOME/.bash_profile
+    block: |
+      export PATH=$PATH:$HOME/bin
+      source $HOME/.nvm/nvm.sh
+      export JAVA_HOME=$(/usr/libexec/java_home)
+
+- name: "Setup homebrew"
+  shell: 'yes | /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"' 
+  args:
+    creates: /usr/local/bin/brew
+
+- name: "Tap Homebrew cask"
+  homebrew_tap:
+    name: caskroom/cask
+
+- name: "Tap Homebrew versions"
+  homebrew_tap:
+    name: caskroom/versions
+
+- name: "Install Homebrew java8"
+  homebrew_cask:
+    name: "{{ item }}"
+  with_items:
+    - "java8"
+
+- name: "Install Homebrew packages"
+  homebrew:
+    name: ['sloccount', 'carthage', 'mc', 'htop', 'git', 'bash-completion']
+
+- name: "Checking if NVM is installed"
+  stat:
+    path: "$HOME/.nvm/nvm.sh"
+  register: "nvm_check"
+
+- name: "Setup bash NVM for the shell"
+  blockinfile:
+    marker: "# {mark} Add NVM to shell"
+    path: $HOME/.bash_profile
+    block: |
+        export NVM_DIR="$HOME/.nvm"
+
+- name: "Install NVM"
+  shell: "curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.11/install.sh | bash 2>&1"
+  ignore_errors: yes
+  when: not nvm_check.stat.exists
+
+- name: "Install Node v8.11.1"
+  shell: "source $HOME/.nvm/nvm.sh && nvm install 2>&1"
+  args:
+    executable: /bin/bash
+  when: not nvm_check.stat.exists
+
+- name: "Install required Ruby gems"
+  gem:
+    name: "{{item}}"
+    user_install: no
+  with_items:
+    - "cocoapods"
+    - "fastlane"
+    - "xcpretty"
+  become: yes
+
+- name: "Install Android SDK (NDK available if needed)"
+  homebrew_cask:
+    name: ['android-sdk']
+  become: user
+
+- name: "Add Android SDK to path"
+  blockinfile:
+    marker: "# {mark} add SDK in the path"
+    path: $HOME/.bash_profile
+    block: |
+      export ANDROID_HOME=/usr/local/share/android-sdk
+      export PATH=$ANDROID_HOME/tools:$PATH
+      export PATH=$ANDROID_HOME/platform-tools:$PATH

@@ -1,0 +1,79 @@
+---
+########
+# Diogo's Environment 
+########
+
+- name: "Install Homebrew packages"
+  homebrew:
+    name: ['zsh', 'kubectl']
+
+- name: "Install Homebrew Cask packages"
+  homebrew_cask:
+    name: "{{ item }}"
+  with_items:
+    - "visual-studio-code"
+    - "iterm2"
+    - "skype"
+    - "the-unarchiver"
+    - "whatsapp"
+    - "postman"
+    - "virtualbox"
+    - "appium"
+    - "sourcetree"
+    - "monosnap"
+    - "wunderlist"
+    - "ifunbox"
+    - "charles"
+    - "android-file-transfer"
+    - "teamviewer"
+    - "telegram-desktop"
+    - "google-chrome"
+    - "google-cloud-sdk"
+    - "robo-3t"
+    - "intellij-idea-ce"
+    - "commander-one"
+
+- name: "Setup GIT user vars"
+  shell: |
+      git config --global user.name "Diogo Mendes"
+      git config --global user.email "dmendes@daitangroup.com"
+  args:
+    executable: /bin/bash
+
+- name: "Setup Mac UI level changes to my preferences"
+  shell: |
+     chflags nohidden ~/Library
+     defaults write com.apple.finder AppleShowAllFiles yes
+     defaults write com.apple.finder ShowPathbar -bool true
+     defaults write com.apple.finder ShowStatusBar -bool true
+     defaults write com.apple.finder QLEnableTextSelection -bool true
+     defaults write com.apple.finder NewWindowTarget -string 'PfDe'
+     defaults write com.apple.finder NewWindowTargetPath -string 'file://$HOME/Desktop/'
+     defaults write com.apple.finder ShowRecentTags -bool false
+     defaults write -g AppleShowAllExtensions -bool true
+     defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
+     defaults write com.apple.screencapture location ~/Pictures/Screenshots
+     defaults write com.apple.Dock showhidden -bool yes
+     defaults write com.apple.menuextra.battery ShowPercent -string "YES"
+     defaults write com.apple.menuextra.battery ShowTime -string "YES"
+     defaults write com.apple.NetworkBrowser BrowseAllInterfaces -bool true
+     defaults write com.apple.dock expose-animation-duration -float 0.12
+     defaults write NSGlobalDomain NSDocumentSaveNewDocumentsToCloud -bool false
+     defaults write com.microsoft.Office SendPersonalInformationToMotherShip NO
+     defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true
+     defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true
+     defaults write -g NSDocumentSaveNewDocumentsToCloud -bool false
+     defaults write com.apple.print.PrintingPrefs "Quit When Finished" -bool true
+     defaults write com.apple.dock minimize-to-application -bool true
+     defaults write com.apple.dock persistent-others -array-add '{ "tile-data" = { "list-type" = 1; }; "tile-type" = "recents-tile"; }'
+     defaults write com.apple.finder PathBarRootAtHome -bool yes
+  args:
+   executable: /bin/bash
+
+- name: Install VSCode extensions
+  become: yes
+  become_user: '{{ ansible_ssh_user }}'
+  visual_studio_code_install_extension:
+    - vscoss.vscode-ansible
+    - rebornix.ruby
+    - vscjava.vscode-maven
